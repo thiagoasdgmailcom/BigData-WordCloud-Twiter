@@ -1,0 +1,25 @@
+val folderPath = "hdfs://127.0.0.1:9000/user/root/usa_tweets_teste";
+val df5 = spark.read.csv(folderPath);
+
+df5.printSchema
+
+val df6 = df5.na.drop(Seq("_c5"))
+
+val textoDist = df6.select("_c5").as[String]
+
+val dfconv = textoDist.rdd
+dfconv.take(7).foreach(println)
+
+val words = dfconv.flatMap(line => line.split(" "))
+
+val wordsFilt = words.filter(x => x.length > 5)
+wordsFilt.take(7).foreach(println)
+val counts = wordsFilt.map(word => (word.toUpperCase,1))
+counts.take(7).foreach(println)
+val countsReduced = counts.reduceByKey((v1, v2) => v1 + v2)
+countsReduced.take(20)
+val wordcount = countsReduced.sortBy(par => par._2, false)
+wordcount.take(7).foreach(println)
+
+wordcount.coalesce(1).saveAsTextFile("file:////var/www/bigdata/html/wctwitter")
+
